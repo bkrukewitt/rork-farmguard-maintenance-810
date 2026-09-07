@@ -16,11 +16,10 @@ import {
 import { X } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export const SUPER_ADMIN_PIN = '9173';
 export const DEBUG_PIN = '1847';
 
-function getEffectiveSuperAdminPin(): string {
-  return process.env.EXPO_PUBLIC_SUPER_ADMIN_PIN || SUPER_ADMIN_PIN;
+function getConfiguredSuperAdminPin(): string {
+  return process.env.EXPO_PUBLIC_SUPER_ADMIN_PIN || '';
 }
 
 export const [AdminAccessProvider, useAdminAccess] = createContextHook(() => {
@@ -35,10 +34,12 @@ export const [AdminAccessProvider, useAdminAccess] = createContextHook(() => {
 
   const footerTapCountRef = useRef(0);
   const footerTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const authenticatedPinRef = useRef('');
 
   const exitSuperAdmin = useCallback(() => {
     setIsSuperAdmin(false);
     setIsDebugMode(false);
+    authenticatedPinRef.current = '';
   }, []);
 
   const handleFooterTap = useCallback(() => {
@@ -61,8 +62,9 @@ export const [AdminAccessProvider, useAdminAccess] = createContextHook(() => {
   }, [isSuperAdmin, isDebugMode, exitSuperAdmin]);
 
   const submitPin = useCallback(() => {
-    const effectiveSuperAdminPin = getEffectiveSuperAdminPin();
-    if (pinInput === SUPER_ADMIN_PIN || pinInput === effectiveSuperAdminPin) {
+    const configuredSuperAdminPin = getConfiguredSuperAdminPin();
+    if (configuredSuperAdminPin && pinInput === configuredSuperAdminPin) {
+      authenticatedPinRef.current = configuredSuperAdminPin;
       setIsSuperAdmin(true);
       setIsDebugMode(false);
       setShowPinModal(false);
@@ -165,7 +167,7 @@ export const [AdminAccessProvider, useAdminAccess] = createContextHook(() => {
     () => ({
       isSuperAdmin,
       isDebugMode,
-      effectiveSuperAdminPin: getEffectiveSuperAdminPin(),
+      effectiveSuperAdminPin: isSuperAdmin ? authenticatedPinRef.current : '',
       handleFooterTap,
       exitSuperAdmin,
       pinModal,

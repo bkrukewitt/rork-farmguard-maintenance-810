@@ -185,7 +185,13 @@ async function requireFarmAccess(farmId: string, farmPassword: string | null | u
 }
 
 function requireSuperAdminPin(pin: string): void {
-  const configuredPin = process.env.SUPER_ADMIN_PIN || "9173";
+  const configuredPin = process.env.SUPER_ADMIN_PIN;
+  if (!configuredPin) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Super admin PIN is not configured.",
+    });
+  }
   if (pin !== configuredPin) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
